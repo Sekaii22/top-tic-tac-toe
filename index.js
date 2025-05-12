@@ -82,4 +82,16 @@ const gameboard = (function() {
     return {show, fill, checkWin, getWinningCombination, reset};
 })();
 
+function createPlayer(name, symbol) {
+    // private
+    let moves = [];
+
+    // public
+    const addMove = (pos) => moves.push(pos);
+
+    const getMoves = () => moves.slice();
+
+    return {name, symbol, addMove, getMoves};
+}
+
 console.log(gameboard);
