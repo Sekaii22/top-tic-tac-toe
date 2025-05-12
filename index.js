@@ -42,7 +42,6 @@ const gameboard = (function() {
         let row = Math.floor(pos / 3);
         let col = pos % 3;
         board[row][col] = symbol;
-        noOfPosFilled++;
 
         return true;
     };
@@ -51,7 +50,6 @@ const gameboard = (function() {
         board = [[null, null, null], 
                  [null, null, null], 
                  [null, null, null]];
-        noOfPosFilled = 0;
     };
 
     return {show, fill, reset};
@@ -59,14 +57,13 @@ const gameboard = (function() {
 
 function createPlayer(name, symbol) {
     // private
-    let moves = [];
+    // let moves = [];
 
     // public
-    const addMove = (pos) => moves.push(pos);
+    // const addMove = (pos) => moves.push(pos);
+    // const getMoves = () => moves.slice();
 
-    const getMoves = () => moves.slice();
-
-    return {name, symbol, addMove, getMoves};
+    return {name, symbol};
 }
 
 const gameController = (function() {
@@ -116,15 +113,17 @@ const gameController = (function() {
         player1CountBuckets = [0, 0, 0, 0, 0, 0, 0, 0];
         player2CountBuckets = [0, 0, 0, 0, 0, 0, 0, 0];
         gameboard.reset();
+        gameboard.show();
     };
 
     const takeTurn = function(pos) {
         if (gameStarted) {
             // p1: even turns, p2 = odd turns
+            console.log("Turn: " + turnNum);
             if (turnNum % 2 === 0) {
                 if (gameboard.fill(player1.symbol, pos)) {
                     gameboard.show();
-                    player1.addMove(pos);
+                    // player1.addMove(pos);
                     update(player1CountBuckets, pos);
                     turnNum++;
 
@@ -134,14 +133,18 @@ const gameController = (function() {
                         gameStarted = false;
                         // set off win event
                         alert(`Player 1 (${player1.symbol}) won`);
+                        console.log(winningCombination);
                         return;
                     }
+                }
+                else {
+                    console.log("Invalid move");
                 }
             } 
             else {
                 if (gameboard.fill(player2.symbol, pos)) {
                     gameboard.show();
-                    player2.addMove(pos);
+                    // player2.addMove(pos);
                     update(player2CountBuckets, pos);
                     turnNum++;
 
@@ -150,9 +153,13 @@ const gameController = (function() {
                     if (checkWin(player2CountBuckets)) {
                         gameStarted = false;
                         // set off win event
-                        alert(`Player 2 (${player1.symbol}) won`);
+                        alert(`Player 2 (${player2.symbol}) won`);
+                        console.log(winningCombination);
                         return;
                     }
+                }
+                else {
+                    console.log("Invalid move");
                 }
             } 
 
@@ -167,7 +174,6 @@ const gameController = (function() {
     return { gameSetup, takeTurn };
 })();
 
-console.log(gameboard);
 let p1 = createPlayer("Bob", "x");
 let p2 = createPlayer("Tim", "o");
 gameController.gameSetup(p1, p2);
