@@ -18,6 +18,8 @@ h1 {
     color: whitesmoke;
 }
 
+/* game container */
+
 .game-container {
     display: grid;
     grid-template-columns: repeat(3, min(150px, 20vw));
@@ -31,13 +33,23 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 5px 5px hsl(from #3731E0 h s 25%);
+}
+
+.placeholder-cell {
+    background-color: rgb(from #3731E0 r g b / 30%);
+    box-shadow: none;
 }
 
 .open {
     cursor: pointer;
 }
 
-.cell.open:hover {
+.open:hover {
+    scale: 1.05;
+}
+
+.open:active {
     scale: 1.1;
 }
 
@@ -54,28 +66,51 @@ h1 {
     fill: #53E031;
 }
 
+/* form */
+
+form {
+    display: flex;
+    justify-content: center;
+    align-items: end;
+    align-self: stretch;
+}
+
 #start-btn {
-    padding: 10px 30px;
+    padding: 14px 36px;
     border: none;
     color: whitesmoke;
     background-color: #049475;
     border-radius: 10px;
     font-size: 1rem;
     margin: 0 10px;
-    /* box-shadow: 8px 8px hsl(from #049475 h s 10%); */
+    cursor: pointer;
+    box-shadow: 2px 5px 3px rgba(0, 0, 0, 0.2);
 }
 
-form {
-    display: flex;
-    align-items: end;
+#start-btn:hover {
+    scale: 1.05;
+}
+
+#start-btn:active {
+    background-color: hsl(from #049475 h s 25%);
 }
 
 input[type="text"] {
     height: 30px;
+    width: 0;
+    flex: 1;
+    max-width: 200px;
+    
+    border: none;
     border-radius: 5px;
-    padding: 0 10px;
+    padding: 3px 10px;
+    font-size: 0.9rem;
     margin: 0 10px;
+    background-color: gray;
+    color: white;
 }
+
+/* modal */
 
 dialog {
     padding: 0;
@@ -99,7 +134,7 @@ dialog::backdrop {
 
 #modal-area p {
     margin: 5px;
-    color: white;
+    color: whitesmoke;
 }
 
 #result-heading {

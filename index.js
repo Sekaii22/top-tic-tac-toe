@@ -58,13 +58,6 @@ const gameboard = (function() {
 })();
 
 function createPlayer(name, textSymbol, imgSymbol) {
-    // private
-    // let moves = [];
-
-    // public
-    // const addMove = (pos) => moves.push(pos);
-    // const getMoves = () => moves.slice();
-
     return {name, textSymbol, imgSymbol};
 }
 
@@ -99,7 +92,7 @@ const gameController = (function(gameboard) {
         return false;
     };
 
-    const update = function(buckets, pos) {
+    const updateBucket = function(buckets, pos) {
         // update bucket
         winStates.forEach((combi, index) => {
             if (combi.includes(pos))
@@ -108,8 +101,6 @@ const gameController = (function(gameboard) {
     }
 
     // public
-    const getPlayers = () => [player1, player2];
-
     const addGameOverEventHandler = (callbackFn) => gameoverEventHandlers.push(callbackFn);
 
     const gameSetup = function(p1, p2) {
@@ -128,6 +119,7 @@ const gameController = (function(gameboard) {
 
     // returns the player that took the move, else none if invalid move
     const takeTurn = function(pos) {
+        console.log("try take turn");
         if (gameStarted) {
             // p1: even turns, p2 = odd turns
             let player = (turnNum % 2 === 0) ? player1 : player2;
@@ -136,11 +128,12 @@ const gameController = (function(gameboard) {
             console.log("Turn: " + turnNum);
             if (gameboard.fill(player.textSymbol, pos)) {
                 gameboard.show();
-                update(buckets, pos);
+                updateBucket(buckets, pos);
                 turnNum++;
 
                 // check for win
                 if (checkWin(buckets)) {
+                    // stop game
                     gameStarted = false;
 
                     console.log(`Player ${player.name} (${player.textSymbol}) won`);
@@ -157,6 +150,7 @@ const gameController = (function(gameboard) {
                 }
                 // else check for draw
                 else if (turnNum >= 9) {
+                    // stop game
                     gameStarted = false;
                     
                     console.log(`Draw`);
@@ -180,7 +174,7 @@ const gameController = (function(gameboard) {
         return null;
     };
 
-    return { gameSetup, takeTurn, getPlayers, addGameOverEventHandler };
+    return { gameSetup, takeTurn, addGameOverEventHandler };
 })(gameboard);
 
 // DOM/display related, using display to interact with gameController
@@ -199,15 +193,14 @@ const displayController = (function(doc, game) {
     const crossSymbol = `<svg class="cross" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>`;
     const circleSymbol = `<svg class="circle" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>`;
 
-    const addAllOpenCellStyling = function () {
-        for (let cell of gameContainer.querySelectorAll(".cell")) {
-            cell.classList.add("open");
-        }
+    const disableCellInteractivity = function(cell) {
+        cell.classList.remove("open");
+        cell.style.cssText = "pointer-events: none;";
     }
 
-    const removeAllOpenCellStyling = function() {
+    const disableAllCellInteractivity = function() {
         for (let cell of gameContainer.querySelectorAll(".cell")) {
-            cell.classList.remove("open");
+            disableCellInteractivity(cell);
         }
     }
 
@@ -226,7 +219,7 @@ const displayController = (function(doc, game) {
             let cell = doc.createElement("div");
             gameContainer.appendChild(cell);
             
-            cell.classList.add("cell");
+            cell.classList.add("cell", "open");
             cell.dataset.position = pos;
 
             cell.addEventListener("click", () => {
@@ -235,10 +228,7 @@ const displayController = (function(doc, game) {
                 if (player !== null) {
                     // valid move taken
                     markCell(pos, player.imgSymbol);
-                    cell.classList.remove("open");
-                } 
-                else {
-                    // show some error
+                    disableCellInteractivity(cell);
                 }
             });
         }
@@ -248,33 +238,50 @@ const displayController = (function(doc, game) {
     };
 
     // initialize (run only once on script load)
-    setupDisplay();
     gameController.addGameOverEventHandler((event) => {
+        // game is over
+        disableAllCellInteractivity();
+
         if (event.winner !== null){
             resultHeading.textContent = `${event.winner.name} is the Winner!`;
             resultText.textContent = "Congratulation!";
         }
         else {
-            resultHeading.textContent = "Its a Draw";
-            resultText.textContent = "You are both winners, congrats.";
+            resultHeading.textContent = "Its a Draw!";
+            resultText.textContent = "You are both winners. Congrats!";
         }
 
         resultModal.showModal();
 
-        removeAllOpenCellStyling();
+        // unlock name inputs
+        player1NameInput.readOnly = false;
+        player2NameInput.readOnly = false;
+        player1NameInput.style.cssText = "pointer-events: auto;";
+        player2NameInput.style.cssText = "pointer-events: auto;";
+    });
+
+    // clicking outside modal should closes it as well
+    resultModal.addEventListener("click", () => resultModal.close());
+    modalArea.addEventListener("click", (e) => {
+        e.stopPropagation();
     });
 
     startBtn.addEventListener("click", (e) => {
         if (form.checkValidity()) {
             e.preventDefault();
 
-            // TODO: take player details from some input later
+            // lock name inputs
+            player1NameInput.readOnly = true;
+            player2NameInput.readOnly = true;
+            player1NameInput.style.cssText = "pointer-events: none;";
+            player2NameInput.style.cssText = "pointer-events: none;";
+
             let p1 = createPlayer(player1NameInput.value, "x", crossSymbol);
             let p2 = createPlayer(player2NameInput.value, "o", circleSymbol);
-            game.gameSetup(p1, p2);
 
+            // start game and setup display
+            game.gameSetup(p1, p2);
             setupDisplay();
-            addAllOpenCellStyling();
         }
     });
     
