@@ -40,7 +40,7 @@ const gameboard = (function() {
         if (checkValid(pos) === false)
             return false;
 
-        // mark symbol on board at pos
+        // mark symbol on board arr at pos
         let row = Math.floor(pos / 3);
         let col = pos % 3;
         board[row][col] = symbol;
@@ -57,7 +57,7 @@ const gameboard = (function() {
     return {show, fill, reset};
 })();
 
-function createPlayer(name, symbol) {
+function createPlayer(name, textSymbol, imgSymbol) {
     // private
     // let moves = [];
 
@@ -65,7 +65,7 @@ function createPlayer(name, symbol) {
     // const addMove = (pos) => moves.push(pos);
     // const getMoves = () => moves.slice();
 
-    return {name, symbol};
+    return {name, textSymbol, imgSymbol};
 }
 
 // not display dependent, can be played as a console game
@@ -86,6 +86,7 @@ const gameController = (function(gameboard) {
                        [0, 3, 6], [1, 4, 7], [2, 5, 8],
                        [0, 4, 8], [2, 4, 6]];
     let winningCombination = null;
+    let gameoverEventHandlers = [];
 
     const checkWin = function(buckets) {
         // if any bucket count reaches 3, it means a winning combination is satisfied
@@ -109,6 +110,8 @@ const gameController = (function(gameboard) {
     // public
     const getPlayers = () => [player1, player2];
 
+    const addGameOverEventHandler = (callbackFn) => gameoverEventHandlers.push(callbackFn);
+
     const gameSetup = function(p1, p2) {
         gameStarted = true;
         turnNum = 0;
@@ -131,7 +134,7 @@ const gameController = (function(gameboard) {
             let buckets = (turnNum % 2 === 0) ? player1CountBuckets : player2CountBuckets;
             
             console.log("Turn: " + turnNum);
-            if (gameboard.fill(player.symbol, pos)) {
+            if (gameboard.fill(player.textSymbol, pos)) {
                 gameboard.show();
                 update(buckets, pos);
                 turnNum++;
@@ -139,15 +142,32 @@ const gameController = (function(gameboard) {
                 // check for win
                 if (checkWin(buckets)) {
                     gameStarted = false;
-                    // set off win event
-                    alert(`Player ${player.name} (${player.symbol}) won`);
+
+                    console.log(`Player ${player.name} (${player.textSymbol}) won`);
                     console.log(winningCombination);
+
+                    // fire off gameover event
+                    gameoverEventHandlers.forEach((func) => {
+                        let event = {
+                            winner: player,
+                            combination: winningCombination,
+                        };
+                        func(event);
+                    });
                 }
                 // else check for draw
                 else if (turnNum >= 9) {
                     gameStarted = false;
-                    // set off draw event
-                    alert(`Draw`);
+                    
+                    console.log(`Draw`);
+
+                    // fire off gameover event
+                    gameoverEventHandlers.forEach((func) => {
+                        let event = {
+                            winner: null,
+                        };
+                        func(event);
+                    });
                 }
 
                 return player;
@@ -160,19 +180,41 @@ const gameController = (function(gameboard) {
         return null;
     };
 
-    return { gameSetup, takeTurn, getPlayers };
+    return { gameSetup, takeTurn, getPlayers, addGameOverEventHandler };
 })(gameboard);
 
-// DOM/display related
+// DOM/display related, using display to interact with gameController
 const displayController = (function(doc, game) {
     // private
     const gameContainer = doc.querySelector("#game-container");
+    const form = doc.querySelector("form");
     const startBtn = doc.querySelector("#start-btn");
+    const player1NameInput = doc.querySelector("#player1-name");
+    const player2NameInput = doc.querySelector("#player2-name");
+    const resultHeading = doc.querySelector("#result-heading");
+    const resultText = doc.querySelector("#result-text");
+    const resultModal = doc.querySelector("#result-modal");
+    const modalArea = doc.querySelector("#modal-area")
+
+    const crossSymbol = `<svg class="cross" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>`;
+    const circleSymbol = `<svg class="circle" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>`;
+
+    const addAllOpenCellStyling = function () {
+        for (let cell of gameContainer.querySelectorAll(".cell")) {
+            cell.classList.add("open");
+        }
+    }
+
+    const removeAllOpenCellStyling = function() {
+        for (let cell of gameContainer.querySelectorAll(".cell")) {
+            cell.classList.remove("open");
+        }
+    }
 
     // public
-    const markCell = function(pos, symbol) {
+    const markCell = function(pos, imgSymbol) {
         let cell = doc.querySelector(`.cell[data-position="${pos}"]`);
-        cell.innerHTML = symbol;
+        cell.innerHTML = imgSymbol;
     };
 
     const setupDisplay = function() {
@@ -192,26 +234,49 @@ const displayController = (function(doc, game) {
 
                 if (player !== null) {
                     // valid move taken
-                    markCell(pos, player.symbol);
+                    markCell(pos, player.imgSymbol);
+                    cell.classList.remove("open");
                 } 
                 else {
                     // show some error
                 }
             });
         }
+
+        resultHeading.textContent = "";
+        resultText.textContent = "";
     };
 
     // initialize (run only once on script load)
     setupDisplay();
+    gameController.addGameOverEventHandler((event) => {
+        if (event.winner !== null){
+            resultHeading.textContent = `${event.winner.name} is the Winner!`;
+            resultText.textContent = "Congratulation!";
+        }
+        else {
+            resultHeading.textContent = "Its a Draw";
+            resultText.textContent = "You are both winners, congrats.";
+        }
 
-    startBtn.addEventListener("click", () => {
-        // TODO: take player details from some input later
-        let p1 = createPlayer("Bob", "x");
-        let p2 = createPlayer("Tim", "o");
-        setupDisplay();
-        game.gameSetup(p1, p2);
+        resultModal.showModal();
+
+        removeAllOpenCellStyling();
+    });
+
+    startBtn.addEventListener("click", (e) => {
+        if (form.checkValidity()) {
+            e.preventDefault();
+
+            // TODO: take player details from some input later
+            let p1 = createPlayer(player1NameInput.value, "x", crossSymbol);
+            let p2 = createPlayer(player2NameInput.value, "o", circleSymbol);
+            game.gameSetup(p1, p2);
+
+            setupDisplay();
+            addAllOpenCellStyling();
+        }
     });
     
     return { setupDisplay, markCell };
 })(document, gameController);
-
