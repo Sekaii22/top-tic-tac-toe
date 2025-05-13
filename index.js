@@ -207,7 +207,7 @@ const displayController = (function(doc, game) {
 
     // public
     const markCell = function(pos, imgSymbol) {
-        let cell = doc.querySelector(`.cell[data-position="${pos}"]`);
+        let cell = gameContainer.querySelector(`.cell[data-position="${pos}"]`);
         cell.innerHTML = imgSymbol;
     };
 
@@ -243,17 +243,23 @@ const displayController = (function(doc, game) {
         // game is over
         disableAllCellInteractivity();
 
+        // display modal
         if (event.winner !== null){
             resultSymbol.innerHTML = event.winner.imgSymbol;
             resultHeading.textContent = `${event.winner.name} is the Winner!`;
             resultText.textContent = "Congratulation!";
+
+            // highlight winning cells
+            for (let pos of event.combination) {
+                let cell = gameContainer.querySelector(`.cell[data-position="${pos}"]`);
+                cell.classList.add("highlight-cell");
+            } 
         }
         else {
             resultSymbol.innerHTML = "";
             resultHeading.textContent = "Its a Draw!";
             resultText.textContent = "You are both winners. Congrats!";
         }
-
         resultModal.showModal();
 
         // unlock name inputs

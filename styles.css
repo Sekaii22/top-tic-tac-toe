@@ -41,6 +41,11 @@ h1 {
     box-shadow: none;
 }
 
+.highlight-cell {
+    outline: 2px solid white;
+    box-shadow: 0 0 20px 5px white;
+}
+
 .open {
     cursor: pointer;
 }
