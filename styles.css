@@ -58,11 +58,11 @@ h1 {
     height: auto;
 }
 
-.cell svg.cross {
+svg.cross {
     fill: #E07031;
 }
 
-.cell svg.circle {
+svg.circle {
     fill: #53E031;
 }
 
@@ -71,7 +71,7 @@ h1 {
 form {
     display: flex;
     justify-content: center;
-    align-items: end;
+    align-items: center;
     align-self: stretch;
 }
 

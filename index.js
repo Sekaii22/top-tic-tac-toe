@@ -187,6 +187,7 @@ const displayController = (function(doc, game) {
     const player2NameInput = doc.querySelector("#player2-name");
     const resultHeading = doc.querySelector("#result-heading");
     const resultText = doc.querySelector("#result-text");
+    const resultSymbol = doc.querySelector("#winner-symbol");
     const resultModal = doc.querySelector("#result-modal");
     const modalArea = doc.querySelector("#modal-area")
 
@@ -243,10 +244,12 @@ const displayController = (function(doc, game) {
         disableAllCellInteractivity();
 
         if (event.winner !== null){
+            resultSymbol.innerHTML = event.winner.imgSymbol;
             resultHeading.textContent = `${event.winner.name} is the Winner!`;
             resultText.textContent = "Congratulation!";
         }
         else {
+            resultSymbol.innerHTML = "";
             resultHeading.textContent = "Its a Draw!";
             resultText.textContent = "You are both winners. Congrats!";
         }
